@@ -1,0 +1,50 @@
+terraform:
+  worker_options:
+    aws_region: us-east-1
+    # configure via aws credentials file
+    aws_profile: terraform
+    backend: s3
+    backend_bucket: sigilstack-state
+    provider_cache: ./.cache
+
+  definitions:
+    # bootstrap will handle managing the state bucket and related resources
+    # bootstrap:
+
+    # dns will handle the management of all DNS zones and one-off DNS records
+    coredns:
+      # @TODO(ephur): replace with proper logic to swap beween local dev and remote repo
+      path: git@github.com:ephur/sigilstack-worker-definitions.git
+      # path: ../sigilstack-worker-definitions/
+      remote_path_options:
+        branch: main
+        sub_path: coredns
+      terraform_vars:
+        cloudflare_account_name: "sigilstack"
+
+  providers:
+      aws:
+        requirements:
+          version: 5.99.1
+        config_blocks:
+          default_tags:
+            tags:
+              terraform: "true"
+              deployment: "sigilstack"
+              environment: "prodish"
+
+      # Used to read DNS records as a data source, this provider is rough, it sometimes likes
+      # to return empty results, or truncate results, so we use it with care, no, not really, we
+      # just use it carelessly. What could go wrong?
+      dns:
+        requirements:
+          version: 3.4.3
+
+      cloudflare:
+        requirements:
+          version: 5.5.0
+          source: "cloudflare/cloudflare"
+
+      'null':
+        requirements:
+          version: 3.2.4

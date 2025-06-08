@@ -53,9 +53,9 @@ deploy action="" limit="" local="false":
 
   ARGS=""; \
   if [ "{{action}}" = "plan" ]; then \
-    ARGS+="--plan --no-apply"; \
+    ARGS+="--no-apply"; \
   elif [ "{{action}}" = "apply" ]; then \
-    ARGS+="--no-plan --apply"; \
+    ARGS+="--apply"; \
   elif [ "{{action}}" != "" ]; then \
     echo "Invalid action: {{action}}"; exit 1; \
   fi; \
@@ -69,16 +69,16 @@ deploy action="" limit="" local="false":
 # Plan the current definitions; optionally pass local to use local files instead of remote.
 plan local="":
   if [ "{{local}}" = "local" ]; then \
-    just deploy action="plan" local="true"; \
+    just deploy plan "" true; \
   elif [ "{{local}}" = "" ]; then \
-    just deploy action="plan" local="false"; \
+    just deploy plan "" false; \
   else \
     echo "Invalid local argument: {{local}}"; exit 1; \
   fi
 
 # Apply the current plan for all definitions that have a saved plan.
 apply:
-  just deploy action="apply"
+  just deploy apply
 
 # Plan the core DNS configuration; optionally pass local to use local files instead of remote.
 plan-coredns local="":

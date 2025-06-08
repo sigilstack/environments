@@ -13,9 +13,11 @@ terraform:
 
     # dns will handle the management of all DNS zones and one-off DNS records
     coredns:
-      # @TODO(ephur): replace with proper logic to swap beween local dev and remote repo
-      path: git@github.com:ephur/sigilstack-worker-definitions.git
-      # path: ../sigilstack-worker-definitions/
+      {% if var.local == "true" %}
+      path: ../worker-definitions/
+      {% else %}
+      path: git@github.com:sigilstack/worker-definitions.git
+      {% endif %}
       remote_path_options:
         branch: main
         sub_path: coredns

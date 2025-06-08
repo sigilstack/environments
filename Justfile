@@ -15,6 +15,7 @@ help:
   @echo "  make apply            - Apply the current plan for all definitions"
   @echo "  make plan-coredns     - Plan the core DNS configuration"
   @echo "  make apply-coredns    - Apply coredns configuration"
+  @echo "  make test-image       - Build and run tests inside the docker image"
 
 # Generate a PR summary of recent commits.
 pr-summary:
@@ -93,3 +94,14 @@ plan-coredns local="":
 # Apply coredns configuration; must have a valid plan saved.
 apply-coredns:
     just deploy apply coredns
+
+# Build and test the image with development dependencies
+test-image:
+  echo "Building docker image for testing..."
+  docker build -t terraform-worker-test -f oci/Dockerfile oci/
+  echo "Running tests inside the image..."
+  docker run --rm --entrypoint bash terraform-worker-test -c "\
+    cd /opt/terraform-worker && \
+    . /opt/venv/bin/activate && \
+    poetry install --with dev && \
+    make test"

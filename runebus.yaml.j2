@@ -1,0 +1,59 @@
+cloudflare_account_name: &cloudflareAccountName sigilstack
+squall_repo: &squallRepo git@github.com:sigilstack/squall.git
+
+terraform:
+  worker_options:
+    aws_region: us-east-1
+    # configure via aws credentials file
+    aws_profile: terraform
+    backend: s3
+    backend_bucket: sigilstack-state
+    provider_cache: ./.cache
+
+  {# terraform_vars:
+    cloudflare_account_name: "sigilstack" #}
+
+  definitions:
+    # tribute_issuer will manage the Tribute Issuer resources
+    tribute_issuer:
+      {% if var.local == "true" %}
+      path: ../squall/
+      {% else %}
+      path: *squallRepo
+      {% endif %}
+      remote_path_options:
+        branch: main
+        sub_path: runebus/tributes/issuer
+      terraform_vars:
+        cloudflare_account_name: *cloudflareAccountName
+        squall_root: squall.zone
+        tribute_index_url: https://raw.githubusercontent.com/sigilstack/squall/main/iana/issuer
+
+    # tribute_manager will manage the Tribute Manager resources
+    {# tribute_manager:
+      {% if var.local == "true" %}
+      path: ../squall/
+      {% else %}
+      path: *squallRepo
+      {% endif %}
+      remote_path_options:
+        branch: main
+        sub_path: runebus/tributes/manager #}
+
+  providers:
+      cloudflare:
+        requirements:
+          version: 5.5.0
+          source: "cloudflare/cloudflare"
+
+      http:
+        requirements:
+          version: 3.5.0
+
+      local:
+        requirements:
+          version: 2.5.3
+
+      'null':
+        requirements:
+          version: 3.2.4

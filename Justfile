@@ -36,18 +36,23 @@ rubberstamp:
 # When new definitions are added, add corresponding plan-<definition> and apply-<definition> targets.
 
 # Clean up temporary files, state, and plans.
-clean deployment="" limit="":
+clean deployment="" limit="" action="default":
   echo "Cleaning up temporary files..."
   rm -f .pr_summary.tmp
   if [ -n "{{deployment}}" ]; then \
-    if [ -n "{{limit}}" ]; then \
-      rm -f .state/plans/{{deployment}}/{{limit}}.*; \
-    else \
-      rm -f .state/plans/{{deployment}}/*; \
+    if [ "{{action}}" = "plan" ]; then \
+      if [ -n "{{limit}}" ]; then \
+        rm -f .state/plans/{{deployment}}/{{limit}}.*; \
+      else \
+        rm -f .state/plans/{{deployment}}/*; \
+      fi; \
     fi; \
     rm -rf .state/generated/{{deployment}}; \
   else \
     rm -rf .state/generated/*; \
+    if [ "{{action}}" = "plan" ]; then \
+      rm -f .state/plans/*.plan; \
+    fi; \
     rm -f .state/plans/*; \
   fi
   echo "Temporary files cleaned."
@@ -55,7 +60,7 @@ clean deployment="" limit="":
 # Deploy is a recipe not intended to be called directly; but rather through plan-<definition> or apply-<definition>.
 deploy deployment action="" limit="" local="false":
   echo "Deploying with deployment: {{deployment}}, action: {{action}}, limit: {{limit}}, local: {{local}}"
-  just clean {{deployment}} {{limit}}
+  just clean {{deployment}} {{limit}} {{action}}
 
   # ensure the worker base directories exist
   mkdir -p {{worker_dir}}/{{deployment}}
@@ -74,7 +79,7 @@ deploy deployment action="" limit="" local="false":
     ARGS+=" --limit {{limit}}"; \
   fi; \
   worker_args="--config-file {{deployment}}.yaml.j2 --working-dir {{worker_dir}}/{{deployment}}"; \
-  worker_tf_args="--provider-cache {{worker_provider_cache}} --plan-file-path {{worker_plan_path}}/{{deployment}}"; \
+  worker_tf_args="--provider-cache {{worker_provider_cache}} --plan-file-path {{worker_plan_path}}"; \
   worker ${worker_args} --config-var "local={{local}}" terraform {{deployment}} ${ARGS} ${worker_tf_args}
 
 # Plan the current definitions; optionally pass local to use local files instead of remote.
@@ -104,6 +109,21 @@ plan-coredns local="":
 # Apply coredns configuration; must have a valid plan saved.
 apply-coredns:
     just deploy sigilstack apply coredns
+
+###################
+# RUNEBUS RECIPES #
+###################
+rb-plan-tribute-issuer local="":
+  if [ "{{local}}" = "local" ]; then \
+    just deploy runebus plan tribute_issuer true; \
+  elif [ "{{local}}" = "" ]; then \
+    just deploy runebus plan tribute_issuer false; \
+  else \
+    echo "Invalid local argument: {{local}}"; exit 1; \
+  fi
+
+rb-apply-tribute-issuer:
+  just deploy runebus apply tribute_issuer
 
 # Build and test the image with development dependencies
 test-image:
